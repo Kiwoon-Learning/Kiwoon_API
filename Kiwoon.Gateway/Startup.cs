@@ -67,7 +67,7 @@ namespace Kiwoon.Gateway
             services.AddScoped<IJwtStore, JwtStore>();
             services.AddScoped<ITwoFactorStore, TwoFactorStore>();
             services.AddSingleton<IExpiredTokenStore, ExpiredTokenStore>();
-            services.AddSingleton(new ServiceBusClient(Configuration.GetConnectionString("AzureMQ")));
+            services.AddSingleton(new ServiceBusClient(Configuration["AzureMQ"]));
             services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
             services.AddSingleton<IEmailSender, EmailSender>();
             services.AddSingleton<IRateLimitStore, RateLimitStore>();
@@ -88,32 +88,37 @@ namespace Kiwoon.Gateway
                         ValidateAudience = true,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
-                        ValidIssuer = Configuration["Jwt:Issuer"],
-                        ValidAudience = Configuration["Jwt:Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"])),
+                        ValidIssuer = Configuration["JwtIssuer"],
+                        ValidAudience = Configuration["JwtAudience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JwtKey"])),
                     };
                     options.Events = new JwtBearerEvents
                     {
                         OnChallenge = async ctx =>
                         {
-                            await ctx.Response.WriteAsJsonAsync(new ApiResponse(false, 401, "Token is not valid"));
+                            await ctx.Response.WriteAsJsonAsync(new ApiResponse(false, 401, "Token is invalid"));
                             ctx.HandleResponse();
                         },
                         OnForbidden = async ctx =>
                         {
                             ctx.Response.StatusCode = 200;
-                            await ctx.Response.WriteAsJsonAsync(new ApiResponse(false, 403, "Token has expired"));
+                            await ctx.Response.WriteAsJsonAsync(new ApiResponse(false, 403, "Token has expired due to a blacklist"));
                         },
                         OnAuthenticationFailed = async ctx =>
                         {
                             ctx.Response.StatusCode = 200;
-                            if (ctx.Exception is SecurityTokenException e)
+
+                            if (ctx.Exception is SecurityTokenExpiredException)
                             {
-                                await ctx.Response.WriteAsJsonAsync(new ApiResponse(false, 401, $"Token is not valid. {e.Message}"));
+                                await ctx.Response.WriteAsJsonAsync(new ApiResponse(false, 401, "Token is expired"));
+                            }
+                            else if(ctx.Exception is SecurityTokenInvalidSignatureException)
+                            {
+                                await ctx.Response.WriteAsJsonAsync(new ApiResponse(false, 401, "Token signature is not valid"));
                             }
                             else
                             {
-                                await ctx.Response.WriteAsJsonAsync(new ApiResponse(false, 401, "Token is not valid."));
+                                await ctx.Response.WriteAsJsonAsync(new ApiResponse(false, 401, "Token is invalid"));
                             }
                         },
                     };
@@ -136,7 +141,7 @@ namespace Kiwoon.Gateway
             services.AddSingleton<IAuthorizationHandler, JwtUnexpiredHandler>();
             services.AddSingleton<IAuthorizationHandler, CorrectJwtPurposeHandler>();
             services.AddStackExchangeRedisCache(options => 
-                options.Configuration = Configuration.GetConnectionString("Redis"));
+                options.Configuration = Configuration["Redis"]);
             services.Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders =
@@ -144,7 +149,7 @@ namespace Kiwoon.Gateway
             });
 
 
-            var client = new ServiceBusAdministrationClient(Configuration.GetConnectionString("AzureMQ"));
+            var client = new ServiceBusAdministrationClient(Configuration["AzureMQ"]);
             var subName = Guid.NewGuid().ToString();
             Configuration["ApiResponseSub"] = subName;
 

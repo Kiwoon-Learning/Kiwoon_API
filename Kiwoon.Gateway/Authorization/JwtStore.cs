@@ -43,11 +43,11 @@ namespace Kiwoon.Gateway.Authorization
             if (await userManager.GetTwoFactorEnabledAsync(user))
                 claims.Add(new Claim(JwtRegisteredClaimNames.Amr, "otp"));
 
-            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]));
+            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtKey"]));
             var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
             var jwtSecurityToken = new JwtSecurityToken(
-                config["Jwt:Issuer"],
-                config["Jwt:Audience"],
+                config["JwtIssuer"],
+                config["JwtAudience"],
                 claims,
                 expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: signingCredentials);
@@ -69,11 +69,11 @@ namespace Kiwoon.Gateway.Authorization
                 new Claim("purpose", "emailConfirmation")
             };
 
-            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]));
+            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtKey"]));
             var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
             var jwtSecurityToken = new JwtSecurityToken(
-                config["Jwt:Issuer"],
-                config["Jwt:Audience"],
+                config["JwtIssuer"],
+                config["JwtAudience"],
                 claims,
                 expires: DateTime.UtcNow.AddMinutes(15),
                 signingCredentials: signingCredentials);
@@ -119,11 +119,11 @@ namespace Kiwoon.Gateway.Authorization
                 new Claim("hash", Encoding.UTF8.GetString(SHA256.HashData(Encoding.UTF8.GetBytes(user.PasswordHash)))),
                 new Claim("purpose", "passwordRecovery")
             };
-            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]));
+            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtKey"]));
             var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
             var jwtSecurityToken = new JwtSecurityToken(
-                config["Jwt:Issuer"],
-                config["Jwt:Audience"],
+                config["JwtIssuer"],
+                config["JwtAudience"],
                 claims,
                 expires: DateTime.UtcNow.AddMinutes(15),
                 signingCredentials: signingCredentials);
@@ -178,9 +178,9 @@ namespace Kiwoon.Gateway.Authorization
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = config["Jwt:Issuer"],
-                ValidAudience = config["Jwt:Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"])),
+                ValidIssuer = config["JwtIssuer"],
+                ValidAudience = config["JwtAudience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtKey"])),
             };
         }
 
@@ -197,11 +197,11 @@ namespace Kiwoon.Gateway.Authorization
                 new Claim("purpose", "twoFactorRecovery")
             };
 
-            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]));
+            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtKey"]));
             var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
             var jwtSecurityToken = new JwtSecurityToken(
-                config["Jwt:Issuer"],
-                config["Jwt:Audience"],
+                config["JwtIssuer"],
+                config["JwtAudience"],
                 claims,
                 expires: DateTime.UtcNow.AddMinutes(15),
                 signingCredentials: signingCredentials);
@@ -258,11 +258,11 @@ namespace Kiwoon.Gateway.Authorization
                 new Claim("purpose", "twoFactorRememberMe")
             };
 
-            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]));
+            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtKey"]));
             var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
             var jwtSecurityToken = new JwtSecurityToken(
-                config["Jwt:Issuer"],
-                config["Jwt:Audience"],
+                config["JwtIssuer"],
+                config["JwtAudience"],
                 claims,
                 expires: DateTime.UtcNow.AddDays(30),
                 signingCredentials: signingCredentials);

@@ -54,7 +54,7 @@ namespace Kiwoon.Gateway.Controllers
             return Ok(new ApiResponse(true, 200, "Sent request successfully."));
         }
 
-        
+        /*
         [HttpGet("receive"), Authorize]
         public async Task<IActionResult> ReceiveMessage()
         {
@@ -79,7 +79,7 @@ namespace Kiwoon.Gateway.Controllers
             }
             return Ok(apiResponse);
         }
-        
+        */
 
         [HttpGet("refresh")]
         [Authorize]
@@ -232,7 +232,8 @@ namespace Kiwoon.Gateway.Controllers
                 return new ApiQueuedResponse(true, 200, id, "Successfully enabled 2FA");
             });
 
-            return Ok(new ApiResponse(true, 200, "Successfully sent request", Base32Encoding.ToString(secret)));
+            var uri = $"otpauth://totp/{await userManager.GetEmailAsync(user)}?secret={Base32Encoding.ToString(secret)}&issuer=Kiwoon Learning";
+            return Ok(new ApiResponse(true, 200, "Successfully sent request", uri));
         }
 
         [HttpDelete("2fa")]
@@ -262,7 +263,7 @@ namespace Kiwoon.Gateway.Controllers
                 var token = await store.CreateTwoFactorRecoveryTokenAsync(user);
 
                 await sender.SendEmailAsync(await userManager.GetEmailAsync(user), "2FA Account Recovery",
-                    $"<a href=\"http://{config["Host"]}/api/confirm/2fa?recoveryToken=${token}\">Click me</a>");
+                    $"<a href=\"http://{config["Host"]}/api/confirm/2fa?recoveryToken={token}\">Click me</a>");
 
                 return new ApiQueuedResponse(true, 200, id, "Successfully sent 2FA recovery email");
             });

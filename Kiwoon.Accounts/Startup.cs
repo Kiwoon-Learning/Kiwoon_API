@@ -26,7 +26,7 @@ namespace Kiwoon.Accounts
         {
             services.AddDbContext<AccountDbContext>(options =>
             {
-                options.UseSqlServer(Configuration.GetConnectionString("AccountDb"));
+                options.UseSqlServer(Configuration["AccountDb"]);
             }, ServiceLifetime.Transient);
             services.AddScoped<IUserStore<ApplicationUser>, UserStore>();
             services.AddScoped<IUserLoginStore<ApplicationUser>, UserStore>();
@@ -36,7 +36,7 @@ namespace Kiwoon.Accounts
             services.AddScoped<IUserTwoFactorStore<ApplicationUser>, UserStore>();
             services.AddScoped<IUserLockoutStore<ApplicationUser>, UserStore>();
             services.AddScoped<IUserClaimStore<ApplicationUser>, UserStore>();
-            services.AddSingleton(new ServiceBusClient(Configuration.GetConnectionString("AzureMQ")));
+            services.AddSingleton(new ServiceBusClient(Configuration["AzureMQ"]));
             services.AddHostedService<UserReceiver>();
             services.AddHostedService<ClaimsReceiver>();
             services.AddHostedService<UserFinderReceiver>();

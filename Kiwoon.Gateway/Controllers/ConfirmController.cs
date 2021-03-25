@@ -1,6 +1,8 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Web;
 using Kiwoon.Gateway.Domain;
@@ -39,8 +41,12 @@ namespace Kiwoon.Gateway.Controllers
 
 
             using var scope = _factory.CreateScope();
-            var userMgr = scope.GetNotNullService<UserManager<ApplicationUser>>();
-            var jwtStore = scope.GetNotNullService<IJwtStore>();
+            var userMgr = scope.ServiceProvider.GetService<UserManager<ApplicationUser>>();
+            var jwtStore = scope.ServiceProvider.GetService<IJwtStore>();
+            var configuration = scope.ServiceProvider.GetService<IConfiguration>();
+
+            if (userMgr == null || jwtStore == null || configuration == null)
+                return Ok(new ApiResponse(false, 500, "Could not find user"));
 
             var id = 
                 new JwtSecurityToken(token).Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value ?? "";
@@ -51,6 +57,7 @@ namespace Kiwoon.Gateway.Controllers
 
 
             var result = await jwtStore.ValidateEmailConfirmationTokenAsync(user, token);
+            string response;
             if (result)
             {
                 _queue.QueueBackgroundWorkItem(async (serviceScope, stoppingToken) =>
@@ -61,10 +68,17 @@ namespace Kiwoon.Gateway.Controllers
                     var confirmResult = await userManager.UpdateAsync(user);
                     return new ApiQueuedResponse(confirmResult, id);
                 });
+                response =
+                    Convert.ToBase64String(
+                        JsonSerializer.SerializeToUtf8Bytes(new ApiResponse(true, 200, "Successfully confirmed email")));
             }
-            return Ok(!result 
-                ? new ApiResponse(false, 401, "There was an issue verifying the email") 
-                : new ApiResponse(true, 200, "Successfully confirmed email"));
+            else
+            {
+                response = Convert.ToBase64String(
+                    JsonSerializer.SerializeToUtf8Bytes(new ApiResponse(false, 400, "Could not confirm email")));
+            }
+
+            return RedirectPermanent($"http://{configuration["Host"]}/result.html?response={response}");
         }
 
         [HttpPost("email")]
@@ -100,6 +114,9 @@ namespace Kiwoon.Gateway.Controllers
         [HttpGet("password")]
         public async Task<IActionResult> ConfirmResetPassword(string newPassword, string token)
         {
+            if (newPassword == null || token == null)
+                return Ok(new ApiResponse(false, 400, "Parameters cannot be empty"));
+
             using var scope = _factory.CreateScope();
 
             var id =
@@ -108,13 +125,16 @@ namespace Kiwoon.Gateway.Controllers
 
             var userManager = scope.ServiceProvider.GetService<UserManager<ApplicationUser>>();
             var jwtStore = scope.ServiceProvider.GetService<IJwtStore>();
-            if (userManager == null || jwtStore == null) return Ok(new ApiResponse(false, 500, "Could not find user"));
+            var configuration = scope.ServiceProvider.GetService<IConfiguration>();
+
+            if (userManager == null || jwtStore == null || configuration == null) return Ok(new ApiResponse(false, 500, "Could not find user"));
 
             var user = await userManager.FindByIdAsync(id);
             if (user == null) return Ok(new ApiResponse(false,500, "Could not find user"));
 
             if(userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, newPassword) == PasswordVerificationResult.Success)
-                return Ok(new ApiResponse(false, 400, "Please choose a new password"));
+                return RedirectPermanent($"http://{configuration["Host"]}/result.html?response=" +
+                                         Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(new ApiResponse(false, 400, "Please choose a new password"))));
 
             if (await jwtStore.ValidatePasswordRecoveryTokenAsync(user, token))
             {
@@ -126,10 +146,12 @@ namespace Kiwoon.Gateway.Controllers
                     await userMgr.UpdateAsync(user);
                     return new ApiQueuedResponse(true, 200, id, "Successfully changed password");
                 });
-                return Ok(new ApiResponse(true, 200, "Successfully changed password"));
+                return RedirectPermanent($"http://{configuration["Host"]}/result.html?response=" +
+                                         Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(new ApiResponse(true, 200, "Successfully changed password. Please wait a bit"))));
             }
 
-            return Ok(new ApiResponse(false, 403, "Could not change password with specified token"));
+            return RedirectPermanent($"http://{configuration["Host"]}/result.html?response=" +
+                                     Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(new ApiResponse(false, 403, "Supplied token was incorrect"))));
         }
 
         [HttpGet("2fa")]
@@ -137,7 +159,7 @@ namespace Kiwoon.Gateway.Controllers
         {
             if (recoveryToken == null) return Ok(new ApiResponse(false, 400, "Recovery token cannot be empty"));
 
-            var token = default(JwtSecurityToken);
+            JwtSecurityToken token;
             try
             {
                 token = new JwtSecurityToken(recoveryToken);
@@ -150,12 +172,13 @@ namespace Kiwoon.Gateway.Controllers
 
             bool result;
             string id;
-
+            string host;
             using (var scope = _factory.CreateScope())
             {
                 var store = scope.ServiceProvider.GetService<IJwtStore>();
                 var userManager = scope.ServiceProvider.GetService<UserManager<ApplicationUser>>();
-                if (store == null || userManager == null) return Ok(new ApiResponse(false, 500, "Could not validate token"));
+                var configuration = scope.ServiceProvider.GetService<IConfiguration>();
+                if (store == null || userManager == null || configuration == null) return Ok(new ApiResponse(false, 500, "Could not validate token"));
 
                 id = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
                 if (string.IsNullOrWhiteSpace(id)) return Ok(new ApiResponse(false, 400, "Could not find user id"));
@@ -164,6 +187,7 @@ namespace Kiwoon.Gateway.Controllers
                 if(user == null) return Ok(new ApiResponse(false, 400, "Could not find user"));
 
                 result = await store.ValidateTwoFactorRecoveryTokenAsync(user, recoveryToken);
+                host = configuration["Host"];
             }
 
             if (!result)
@@ -179,7 +203,8 @@ namespace Kiwoon.Gateway.Controllers
                 return new ApiQueuedResponse(await userManager.SetTwoFactorEnabledAsync(user, false), id);
             });
 
-            return Ok(new ApiResponse(true, 200, "Successfully disabled 2fa"));
+            return RedirectPermanent($"http://{host}/result.html?response=" +
+                                            Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(new ApiResponse(false, 400, "Response successfully sent"))));
         }
     }
 }

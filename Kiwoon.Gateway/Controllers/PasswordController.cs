@@ -107,8 +107,11 @@ namespace Kiwoon.Gateway.Controllers
                 var configuration = serviceScope.GetNotNullService<IConfiguration>();
 
                 var recoveryToken = await jwtStore.CreatePasswordRecoveryTokenAsync(user);
+
+                var uri = $"http://{configuration["Host"]}/api/confirm/password";
                 await sender.SendEmailAsync(await userManager.GetEmailAsync(user), "Password recovery", 
-                    $"http://{configuration["Host"]}/api/confirm/password?token={recoveryToken}&newPassword=Tymur888");
+                    $"<form method='get' action='{uri}'> <input type='hidden' id='token' name='token' value='{recoveryToken}'/><label for='newPassword'>New Password:</label><br> <input id='newPassword' name='newPassword'/> <button type='submit'>Submit</button></form>"
+                    );
                 return new ApiQueuedResponse(true, 200, await userManager.GetUserIdAsync(user),
                     "Successfully sent password recovery email");
             });

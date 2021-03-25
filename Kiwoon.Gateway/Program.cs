@@ -21,7 +21,7 @@ namespace Kiwoon.Gateway
                 {
                     if (!context.HostingEnvironment.IsDevelopment())
                     {
-                        var builtConfig = config.Build();
+                        var builtConfig = config.AddEnvironmentVariables().Build();
                         var secretClient = new SecretClient(new Uri($"https://{builtConfig["KeyVaultName"]}.vault.azure.net/"),
                             new DefaultAzureCredential());
                         config.AddAzureKeyVault(secretClient, new KeyVaultSecretManager());
