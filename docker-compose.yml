@@ -1,0 +1,21 @@
+version: '3.6'
+
+services:
+  kiwoonapigateway:
+    build:
+      context: .
+      dockerfile: Kiwoon.Gateway/Dockerfile
+    ports:
+     - '8888:8888'
+    environment:
+     - ASPNETCORE_URLS=http://+:8888
+    depends_on:
+     - redis
+  kiwoonaccountms:
+    build:
+      context: .
+      dockerfile: Kiwoon.Accounts/Dockerfile
+    #environment:
+    # - ASPNETCORE_ENVIRONMENT=Development
+  redis:
+    image: redis:latest
