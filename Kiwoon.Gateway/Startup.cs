@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Google.Apis.Logging;
 using Kiwoon.Gateway.Authorization;
 using Kiwoon.Gateway.Domain;
 using Kiwoon.Gateway.Domain.Notifications;
@@ -22,6 +23,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using SharedModels.Domain;
@@ -118,7 +120,8 @@ namespace Kiwoon.Gateway
                             }
                             else
                             {
-                                await ctx.Response.WriteAsJsonAsync(new ApiResponse(false, 401, "Token is invalid"));
+                                Console.WriteLine(ctx.Exception);
+                                await ctx.Response.WriteAsJsonAsync(new ApiResponse(false, 401, "There was an issue verifying the token"));
                             }
                         },
                     };
