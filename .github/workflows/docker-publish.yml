@@ -1,0 +1,42 @@
+name: Docker
+
+on:
+  push:
+    # Publish `master` as Docker `latest` image.
+    branches:
+      - master
+
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - v*
+
+  # Run tests for any PRs.
+  pull_request:
+
+env:
+  # TODO: Change variable to your image's name.
+  IMAGE_NAME: image
+
+jobs:
+  push:
+    # Ensure test job passes before pushing image.
+
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build gateway image
+        run: docker build . -f Kiwoon.Gateway/Dockerfile -t tymurcr.azurecr.io/kiwoongateway
+        
+      - name: Build accounts image
+        run: docker build . -f Kiwoon.Accounts/Dockerfile -t tymurcr.azurecr.io/kiwoonaccounts
+
+      - name: Log into registry
+        run: docker login tymurcr.azurecr.io -u ${{ secrets.SP_APPID }} --password ${{ secrets.SP_PASSWD }}
+
+      - name: Push images
+        run: |
+          docker push tymurcr.azurecr.io/kiwoongateway
+          docker push tymurcr.azurecr.io/kiwoonaccounts
