@@ -47,7 +47,7 @@ namespace Kiwoon.Gateway
             services.AddCors(builder =>
                 builder.AddDefaultPolicy(policy =>
                 {
-                    policy.AllowAnyOrigin();
+                    policy.WithOrigins("127.0.0.1", "localhost");
                     policy.AllowAnyMethod();
                     policy.AllowAnyHeader();
                 }));
@@ -160,7 +160,7 @@ namespace Kiwoon.Gateway
             {
                 client.CreateSubscriptionAsync(new("ApiResponse",subName)
                 {
-                    AutoDeleteOnIdle = TimeSpan.Zero.Add(TimeSpan.FromMinutes(30)), 
+                    AutoDeleteOnIdle = TimeSpan.Zero.Add(TimeSpan.FromDays(10)), 
                     RequiresSession = true
                 }).Wait();
             }
