@@ -49,7 +49,7 @@ namespace Kiwoon.Gateway.Authorization
                 config["JwtIssuer"],
                 config["JwtAudience"],
                 claims,
-                expires: DateTime.UtcNow.AddHours(1),
+                expires: DateTime.UtcNow.AddMinutes(5),
                 signingCredentials: signingCredentials);
             return new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
         }

@@ -12,6 +12,7 @@ using Kiwoon.Gateway.Domain.User;
 using Kiwoon.Gateway.Notifications;
 using Kiwoon.Gateway.RateLimit;
 using Kiwoon.Gateway.Services;
+using Kiwoon.Gateway.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -47,7 +48,7 @@ namespace Kiwoon.Gateway
             services.AddCors(builder =>
                 builder.AddDefaultPolicy(policy =>
                 {
-                    policy.WithOrigins("127.0.0.1", "localhost");
+                    policy.WithOrigins("http://127.0.0.1", "https://127.0.0.1", "http://localhost", "https://localhost");
                     policy.AllowAnyMethod();
                     policy.AllowAnyHeader();
                 }));

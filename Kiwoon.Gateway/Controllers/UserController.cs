@@ -9,6 +9,7 @@ using System.Web;
 using Kiwoon.Gateway.Domain;
 using Kiwoon.Gateway.Domain.Notifications;
 using Kiwoon.Gateway.Domain.User;
+using Kiwoon.Gateway.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -94,7 +95,7 @@ namespace Kiwoon.Gateway.Controllers
             if (store == null || userManager == null || expireStore == null) 
                 return Ok(new ApiResponse(false, 500, "Could not generate new token"));
 
-            var id = userManager.GetUserId(User);
+            var id = UserManagerHelper.GetUserId(User);
             if (id == null) return Ok(new ApiResponse(false, 400, "Could not find user id"));
 
             var user = await userManager.FindByIdAsync(id);

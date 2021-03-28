@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Identity;
 using SharedModels.Domain;
 using SharedModels.Domain.Identity;
 
-namespace Kiwoon.Gateway.Services
+namespace Kiwoon.Gateway.Users
 {
     public class UserStore : IUserClaimStore<ApplicationUser>,
         IUserLoginStore<ApplicationUser>,
