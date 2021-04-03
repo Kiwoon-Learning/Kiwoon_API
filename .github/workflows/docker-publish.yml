@@ -27,11 +27,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build gateway image
+      - name: Build image
         run: docker build . -f Kiwoon.Gateway/Dockerfile -t tymurcr.azurecr.io/kiwoongateway
-        
-      - name: Build accounts image
-        run: docker build . -f Kiwoon.Accounts/Dockerfile -t tymurcr.azurecr.io/kiwoonaccounts
 
       - name: Log into registry
         run: docker login tymurcr.azurecr.io -u ${{ secrets.SP_APPID }} --password ${{ secrets.SP_PASSWD }}
@@ -40,3 +37,6 @@ jobs:
         run: |
           docker push tymurcr.azurecr.io/kiwoongateway
           docker push tymurcr.azurecr.io/kiwoonaccounts
+          
+      - name: Logout
+        run: docker logout
