@@ -34,9 +34,7 @@ jobs:
         run: docker login tymurcr.azurecr.io -u ${{ secrets.SP_APPID }} --password ${{ secrets.SP_PASSWD }}
 
       - name: Push images
-        run: |
-          docker push tymurcr.azurecr.io/kiwoongateway
-          docker push tymurcr.azurecr.io/kiwoonaccounts
+        run: docker push tymurcr.azurecr.io/kiwoonapi
           
       - name: Logout
         run: docker logout
